@@ -2,7 +2,7 @@ Aluno: Danielle Lima da Silva - 2222130001
 
 INSTRUÇÕES RÁPIDAS - VERSÃO HÍBRIDA
 ----------------------------------
-1) Abra o projeto no VS Code.
+1) Abra o projeto no VS Code no modo Administrador.
 2) Crie e ative um virtualenv:
    python -m venv venv
    venv\Scripts\Activate   (Windows PowerShell)
