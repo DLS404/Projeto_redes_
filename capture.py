@@ -1,48 +1,41 @@
 from scapy.all import sniff, IP
-from collections import defaultdict
-import threading
+from collections import defaultdict, deque
+import threading, time
 
-# ATENÇÃO: altere para o IP do servidor que você quer monitorar
 IP_SERVIDOR = "127.0.0.1"
+INTERFACE = None
+JANELA_SEG = 5
+HISTORICO_JANELAS = 120
 
-# Estrutura de dados compartilhada entre sniff e API
-trafego = defaultdict(lambda: {"entrada": 0, "saida": 0, "protocolos": defaultdict(int)})
-trafego_lock = threading.Lock()
+historico = deque(maxlen=HISTORICO_JANELAS)
+janela_atual = defaultdict(lambda: {"entrada":0,"saida":0,"protocolos":defaultdict(int)})
+lock = threading.Lock()
+inicio_janela = time.time()
+
+PROTOS = {1:'ICMP',6:'TCP',17:'UDP'}
 
 def processa_pacote(pkt):
+    global inicio_janela, janela_atual
     if IP in pkt:
         src = pkt[IP].src
         dst = pkt[IP].dst
         tamanho = len(pkt)
-        protocolo = pkt[IP].proto
-
-        with trafego_lock:
+        proto = pkt[IP].proto
+        with lock:
+            agora = time.time()
+            if agora - inicio_janela >= JANELA_SEG:
+                historico.append({"timestamp": inicio_janela, "dados": dict(janela_atual)})
+                janela_atual = defaultdict(lambda: {"entrada":0,"saida":0,"protocolos":defaultdict(int)})
+                inicio_janela = agora
             if dst == IP_SERVIDOR:
-                trafego[src]["entrada"] += tamanho
-                trafego[src]["protocolos"][protocolo] += tamanho
+                janela_atual[src]["entrada"] += tamanho
+                janela_atual[src]["protocolos"][proto] += tamanho
             elif src == IP_SERVIDOR:
-                trafego[dst]["saida"] += tamanho
-                trafego[dst]["protocolos"][protocolo] += tamanho
+                janela_atual[dst]["saida"] += tamanho
+                janela_atual[dst]["protocolos"][proto] += tamanho
 
-def start_sniff(iface=None, filter=None):
-    """Inicia a captura. 
-    - iface: opcional, nome da interface para capturar (ex: 'Ethernet0' ou 'eth0')
-    - filter: opcional, BPF filter
-    """
+def start_sniff(iface=None):
     try:
-        sniff(prn=processa_pacote, store=0, iface=iface, filter=filter)
+        sniff(prn=processa_pacote, store=0, iface=iface)
     except Exception as e:
-        # Falha ao iniciar captura (permissões, npcap, etc.)
-        print('start_sniff error:', e)
-
-if __name__ == "__main__":
-    import threading, time
-    thread = threading.Thread(target=start_sniff, daemon=True)
-    thread.start()
-    try:
-        while True:
-            with trafego_lock:
-                print(dict(trafego))
-                trafego.clear()
-    except KeyboardInterrupt:
-        print("Exiting...")    
+        print("Erro captura:", e)

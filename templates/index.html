@@ -2,100 +2,69 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Dashboard Híbrido de Tráfego</title>
+    <title>Dashboard Completo de Tráfego</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #container { max-width: 1000px; margin: auto; }
-        canvas { background: #fff; border: 1px solid #ddd; }
-        .info { margin-bottom: 10px; }
-        #modal { position: fixed; top: 10%; left: 50%; transform: translateX(-50%); background: white; padding: 12px; border: 1px solid #ccc; display: none; z-index: 999; }
+        body { font-family: Arial; margin:20px; }
+        #container { max-width:1000px; margin:auto; }
+        canvas { background:#fff; border:1px solid #ddd; }
+        #modal { display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%); background:#fff; padding:10px; border:1px solid #ccc; z-index:999; }
     </style>
 </head>
 <body>
     <div id="container">
-        <h1>Tráfego do Servidor (Híbrido)</h1>
-        <div class="info">
-            Atualiza a cada 5 segundos. Use o botão abaixo para forçar dados sintéticos. Clique em uma barra para ver breakdown por protocolo.
-        </div>
-        <button id="forcarSintetico">Forçar Dados Sintéticos</button>
+        <h1>Tráfego do Servidor</h1>
         <canvas id="grafico" width="1000" height="400"></canvas>
     </div>
     <div id="modal">
-        <h3 id="modalTitle">Detalhes</h3>
+        <h3 id="modalTitle"></h3>
         <canvas id="modalChart" width="600" height="300"></canvas>
         <br/><button id="closeModal">Fechar</button>
     </div>
-
     <script>
-        const protoMap = { '1': 'ICMP', '6': 'TCP', '17': 'UDP' };
-        let usarSintetico = false;
-        const ctx = document.getElementById('grafico').getContext('2d');
-        let chart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: [], datasets: [
-                { label: 'Entrada (bytes)', data: [], backgroundColor: 'rgba(54, 162, 235, 0.6)' },
-                { label: 'Saída (bytes)', data: [], backgroundColor: 'rgba(75, 192, 192, 0.6)' }
-            ] },
-            options: { responsive: true, onClick: onClickHandler }
-        });
-
+        const protoMap = {1:'ICMP',6:'TCP',17:'UDP'};
+        let ctx = document.getElementById('grafico').getContext('2d');
+        let chart = new Chart(ctx, {type:'bar', data:{labels:[], datasets:[]}, options:{responsive:true, onClick:onClickHandler, scales:{x:{stacked:true}, y:{stacked:true}}}});
         let modal = document.getElementById('modal');
         let modalTitle = document.getElementById('modalTitle');
         let modalCtx = document.getElementById('modalChart').getContext('2d');
-        let modalChart = new Chart(modalCtx, { type: 'pie', data: { labels: [], datasets:[{ data: [] }] }, options: {} });
+        let modalChart = new Chart(modalCtx, {type:'pie', data:{labels:[], datasets:[{data:[]}]}, options:{}});
+        let trafegoAtual = {};
 
-        async function atualizar() {
-            try {
-                let url = '/dados';
-                if (usarSintetico) url += '?sintetico=1';
-                const res = await fetch(url);
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+        async function atualizar(){
+            try{
+                const res = await fetch('/dados');
                 const data = await res.json();
+                trafegoAtual = data;
                 const ips = Object.keys(data);
                 chart.data.labels = ips;
-                chart.data.datasets[0].data = ips.map(ip => data[ip].entrada || 0);
-                chart.data.datasets[1].data = ips.map(ip => data[ip].saida || 0);
+                chart.data.datasets = [];
+                const protos = Object.keys(protoMap);
+                for(const p of protos){
+                    chart.data.datasets.push({label: protoMap[p], data: ips.map(ip=>data[ip].protocolos[p]||0), backgroundColor:`hsl(${p*60},70%,50%)`});
+                }
                 chart.update();
-                window.__trafego = data;
-                usarSintetico = false; // reset after fetch
-            } catch (err) {
-                console.error('Erro ao buscar /dados:', err);
-            }
+            }catch(e){console.error(e);}
         }
 
-        function onClickHandler(evt, activeEls) {
-            const points = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, false);
-            if (points.length) {
+        function onClickHandler(evt, elems){
+            const points = chart.getElementsAtEventForMode(evt,'nearest',{intersect:true},false);
+            if(points.length){
                 const idx = points[0].index;
                 const ip = chart.data.labels[idx];
-                const detalhes = window.__trafego && window.__trafego[ip] ? window.__trafego[ip].protocolos : null;
-                if (detalhes) {
-                    const labels = [];
-                    const values = [];
-                    for (const [k,v] of Object.entries(detalhes)) {
-                        labels.push(protoMap[k] || ('proto:'+k));
-                        values.push(v);
-                    }
-                    modalTitle.innerText = 'Breakdown por protocolo — ' + ip;
-                    modalChart.data.labels = labels;
-                    modalChart.data.datasets[0].data = values;
-                    modalChart.update();
-                    modal.style.display = 'block';
-                }
+                const detalhes = trafegoAtual[ip].protocolos;
+                const labels=[], values=[];
+                for(const [k,v] of Object.entries(detalhes)){labels.push(protoMap[k]||('proto:'+k)); values.push(v);}
+                modalTitle.innerText = 'Breakdown por protocolo: '+ip;
+                modalChart.data.labels = labels;
+                modalChart.data.datasets[0].data = values;
+                modalChart.update();
+                modal.style.display='block';
             }
         }
 
-        document.getElementById('forcarSintetico').addEventListener('click', () => {
-            usarSintetico = true;
-            atualizar();
-        });
-
-        document.getElementById('closeModal').addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-
-        setInterval(atualizar, 5000);
+        document.getElementById('closeModal').addEventListener('click',()=>{modal.style.display='none';});
+        setInterval(atualizar,5000);
         atualizar();
     </script>
 </body>
