@@ -10,7 +10,11 @@ INSTRUÇÕES
    source venv/bin/activate  (Linux/macOS)
 
 2) Instale dependências:
-   pip install scapy fastapi uvicorn jinja2 aiofiles
+   Windows: precisa ter o Npcap instalado (sem ele o Scapy não consegue capturar pacotes).
+👉 baixar em: https://nmap.org/npcap/
+   Linux/macOS: o Scapy usa bibliotecas nativas (libpcap), geralmente já vêm instaladas.
+  
+   No terminal do VSCODE ou no Powershell: pip install scapy fastapi uvicorn jinja2 aiofiles
 
 3) Configure IP_SERVIDOR em capture.py (coloque o IP do servidor alvo).
 
