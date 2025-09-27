@@ -26,5 +26,5 @@ Recursos da API:
 - /metadata → metadados do alvo
 
 Frontend:
-- Gráfico de barras empilhadas por IP/protocolo
+- Gráfico de barras empilhadas por IP/protocolo em megabytes
 - Drill-down por protocolo ao clicar em uma barra
