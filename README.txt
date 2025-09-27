@@ -1,5 +1,9 @@
+Aluno: Danielle Lima da Silva - 2222130001
+
 INSTRUÇÕES
 ----------
+1) Abra o VSCODE no modo administrador e dê um gitclone desse repositório
+
 1) Crie e ative venv:
    python -m venv venv
    venv\Scripts\activate   (Windows)
