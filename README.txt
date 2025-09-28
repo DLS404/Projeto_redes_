@@ -19,7 +19,8 @@ INSTRUÇÕES
 3) Configure IP_SERVIDOR em capture.py (coloque o IP do servidor alvo).
 
 4) Rode o servidor:
-   python -m uvicorn main:app --reload
+   python -m uvicorn main:app --reload (Windows/VSCODE)
+   sudo python -m uvicorn main:app --reload (Linux)
 
 5) Abra no navegador:
    http://127.0.0.1:8000
