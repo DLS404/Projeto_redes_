@@ -13,8 +13,10 @@ INSTRUÇÕES
 
 3) Crie e ative venv:
    python -m venv venv
+
    venv\Scripts\activate   (Windows)
    source venv/bin/activate  (Linux/macOS)
+
    pip install scapy fastapi uvicorn jinja2 aiofiles
 
 4) Configure IP_SERVIDOR em capture.py (coloque o IP do servidor alvo).
