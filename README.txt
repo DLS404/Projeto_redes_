@@ -10,6 +10,8 @@ INSTRUÇÕES
    source venv/bin/activate  (Linux/macOS)
 
 2) Instale dependências:
+   Python (para rodar o programa): https://www.python.org/downloads/
+
    Windows: precisa ter o Npcap instalado (sem ele o Scapy não consegue capturar pacotes).
 👉 baixar em: https://nmap.org/npcap/
    Linux/macOS: o Scapy usa bibliotecas nativas (libpcap), geralmente já vêm instaladas.
