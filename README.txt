@@ -1,4 +1,6 @@
-Aluno: Danielle Lima da Silva - 2222130001
+Alunas:
+Danielle Lima da Silva - 2222130001
+Mayra Sales da Costa - 2012082054
 
 INSTRUÇÕES
 ----------
